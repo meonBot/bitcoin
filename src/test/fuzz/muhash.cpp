@@ -1,4 +1,4 @@
-// Copyright (c) 2020 The Bitcoin Core developers
+// Copyright (c) 2020-2021 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,7 +9,7 @@
 
 #include <vector>
 
-void test_one_input(const std::vector<uint8_t>& buffer)
+FUZZ_TARGET(muhash)
 {
     FuzzedDataProvider fuzzed_data_provider{buffer.data(), buffer.size()};
     std::vector<uint8_t> data = ConsumeRandomLengthByteVector(fuzzed_data_provider);
@@ -41,6 +41,11 @@ void test_one_input(const std::vector<uint8_t>& buffer)
     muhash.Finalize(out2);
 
     assert(out == out2);
+    MuHash3072 muhash3;
+    muhash3 *= muhash;
+    uint256 out3;
+    muhash3.Finalize(out3);
+    assert(out == out3);
 
     // Test that removing all added elements brings the object back to it's initial state
     muhash /= muhash;
@@ -50,4 +55,9 @@ void test_one_input(const std::vector<uint8_t>& buffer)
     muhash2.Finalize(out2);
 
     assert(out == out2);
+
+    muhash3.Remove(data);
+    muhash3.Remove(data2);
+    muhash3.Finalize(out3);
+    assert(out == out3);
 }
